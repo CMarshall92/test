@@ -1,0 +1,149 @@
+name: Client Application to Azure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps/client/**
+      - .github/workflows/client-application-vercel-deployment.yaml
+
+  pull_request:
+    paths:
+      - apps/client/**
+      - .github/workflows/client-application-vercel-deployment.yaml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Create .env.production in apps/client
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: 'apps/client'
+          file: '.env.production'
+          content: |
+            POSTGRES_URL="{{#POSTGRES_URL}}"
+            NEXTAUTH_URL="{{#NEXT_AUTH_URL_CLIENT}}"
+            NEXTAUTH_SECRET="{{#NEXTAUTH_SECRET}}"
+            AUTH_GITHUB_ID="{{#AUTH_GITHUB_ID}}"
+            AUTH_GITHUB_SECRET="{{#AUTH_GITHUB_SECRET}}"
+            GOOGLE_CLIENT_ID="{{#GOOGLE_CLIENT_ID}}"
+            GOOGLE_CLIENT_SECRET="{{#GOOGLE_CLIENT_SECRET}}"
+            RESEND_API_KEY="{{#RESEND_API_KEY}}"
+            EMAIL_FROM="{{#EMAIL_FROM}}"
+            STRIPE_SECRETKEY="{{#STRIPE_SECRETKEY}}"
+            STRIPE_WEBHOOK_SECRETKEY="{{#STRIPE_WEBHOOK_SECRETKEY}}"
+            NODE_ENV="production"
+            AUTH_TRUST_HOST=true
+
+      - name: Replace tokens in .env.production
+        uses: cschleiden/replace-tokens@v1
+        with:
+          files: './apps/client/.env.production'
+          tokenPrefix: '{{#'
+          tokenSuffix: '}}'
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          NEXT_AUTH_URL_CLIENT: ${{ secrets.NEXT_AUTH_URL_CLIENT }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          AUTH_GITHUB_ID: ${{ secrets.AUTH_GITHUB_ID }}
+          AUTH_GITHUB_SECRET: ${{ secrets.AUTH_GITHUB_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          STRIPE_SECRETKEY: ${{ secrets.STRIPE_SECRETKEY }}
+          STRIPE_WEBHOOK_SECRETKEY: ${{ secrets.STRIPE_WEBHOOK_SECRETKEY }}
+
+      - name: Install dependencies and build
+        run: |
+          yarn install --force
+          cd apps/client
+          yarn build
+
+      - name: Prepare standalone folder
+        run: |
+          cd apps/client
+          mkdir -p ../../build/client/standalone
+
+          cp -r .next/standalone/apps/client/{.,}* ../../build/client/standalone
+          cp -r .next/standalone/node_modules ../../build/client/standalone/node_modules
+          cp -r ./public ../../build/client/standalone
+
+          mkdir -p ../../build/client/standalone/public/_next
+          cp -r .next/static ../../build/client/standalone/public/_next
+
+      - name: Zip Archive
+        run: cd build/client/standalone && zip ../build.zip ./* .next -qr
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: crosspost-client-app
+          path: build/client/build.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Production'
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: crosspost-client-app
+
+      - name: Unzip artifact for deployment
+        run: unzip build.zip
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_CLIENTAPP_NAME }} 
+          slot-name: 'Production'
+          package: build.zip
+          publish-profile: ${{ secrets.AZURE_CLIENTAPP_PUBLISH_PROFILE }}
+
+      # # Step 8: Deploy to Azure App Service
+      # - name: Deploy to Azure Web App
+      #   uses: azure/webapps-deploy@v2
+      #   with:
+      #     app-name: ${{ secrets.AZURE_CLIENTAPP_NAME }} 
+      #     publish-profile: ${{ secrets.AZURE_CLIENTAPP_PUBLISH_PROFILE }}
+      #     package: build/client/build.zip
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Configure Azure App Service
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.48.0 # Ensure a recent version of Azure CLI is used
+          inlineScript: |
+            az webapp config set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --startup-file "node ./server.js"
+            az webapp config set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --linux-fx-version "NODE|18-lts"
+            az webapp config appsettings set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --settings \
+              POSTGRES_URL="${{ secrets.POSTGRES_URL }}" \
+              NEXTAUTH_URL="${{ secrets.NEXT_AUTH_URL_CLIENT }}" \
+              NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+              AUTH_GITHUB_ID="${{ secrets.AUTH_GITHUB_ID }}" \
+              AUTH_GITHUB_SECRET="${{ secrets.AUTH_GITHUB_SECRET }}" \
+              GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
+              EMAIL_FROM="${{ secrets.EMAIL_FROM }}" \
+              STRIPE_SECRETKEY="${{ secrets.STRIPE_SECRETKEY }}" \
+              STRIPE_WEBHOOK_SECRETKEY="${{ secrets.STRIPE_WEBHOOK_SECRETKEY }}"
+              NODE_ENV="production"

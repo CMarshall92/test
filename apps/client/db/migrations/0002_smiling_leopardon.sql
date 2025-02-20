@@ -1,0 +1,2 @@
+ALTER TABLE "users" RENAME COLUMN "subscriptionActive" TO "subscription_active";--> statement-breakpoint
+ALTER TABLE "verificationTokens" ADD CONSTRAINT "verificationTokens_user_id_unique" UNIQUE("user_id");

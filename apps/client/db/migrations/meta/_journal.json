@@ -1,0 +1,34 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1739415999900,
+      "tag": "0000_regular_sugar_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1739578606287,
+      "tag": "0001_nasty_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1739587985408,
+      "tag": "0002_smiling_leopardon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1739590331206,
+      "tag": "0003_chubby_molly_hayes",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "crosspost",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "dev": "turbo dev",
+    "stripe": "cd apps/client && yarn stripe",
+    "run:prod": "cd apps/client && yarn build && mkdir -p ../../build/client/standalone && cp -r .next/standalone/apps/client/{.,}* ../../build/client/standalone && cp -r .next/standalone/node_modules ../../build/client/standalone && cp -r .next/static ../../build/client/standalone/.next && cp -r ./public ../../build/client/standalone && cd ../../build/client/standalone && node server.js"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "turbo": "^2.4.1",
+    "typescript": "5.7.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
