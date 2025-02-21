@@ -5,7 +5,7 @@ export default async function middleware(req: any) {
   const token = await getToken({ 
     req, 
     secret: process.env.NEXTAUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === 'production'
+    // secureCookie: process.env.NODE_ENV === 'production'
   });
 
   if (!token) {
@@ -17,5 +17,5 @@ export default async function middleware(req: any) {
 
 // Don't invoke Middleware on some paths
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|register).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login).*)"],
 };

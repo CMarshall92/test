@@ -21,4 +21,4 @@ docker-compose down
 ```
 
 
-docker cp <CONTANER_ID>>:/ docker
+docker cp 0191bc78b6cb62bfaace519cb5ca7a3353d67db2b857316c7390ea31cb6e08cd:/ docker
