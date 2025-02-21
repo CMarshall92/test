@@ -132,7 +132,7 @@ jobs:
         with:
           azcliversion: 2.48.0 # Ensure a recent version of Azure CLI is used
           inlineScript: |
-            az webapp config set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --startup-file "node ./server.js"
+            az webapp config set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --startup-file "node node_modules/next/dist/bin/next start"
             az webapp config set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --linux-fx-version "NODE|18-lts"
             az webapp config appsettings set --resource-group ${{ secrets.AZURE_CROSSPOST_PRD_RG_NAME }} --name ${{ secrets.AZURE_CLIENTAPP_NAME }} --settings \
               POSTGRES_URL="${{ secrets.POSTGRES_URL }}" \

@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "docker:build": "docker build . -t ghcr.io/CMarshall92/crosspost-application-image:latest",
-    "start": "next start",
+    "start": "node_modules/next/dist/bin/next start",
     "db:generate": "drizzle-kit generate:pg --schema ./db/schema.ts --out=./db/migrations",
     "db:migrate": "tsx ./db/migrate.ts",
     "db:seed": "tsx ./db/seed.ts",

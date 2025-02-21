@@ -1,6 +1,5 @@
 export default {
   reactStrictMode: true,
-  assetPrefix: '/',
   output: 'standalone',
   images: {
     remotePatterns: [
